@@ -1,0 +1,50 @@
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    networks:
+      - default
+    ports:
+      - 9557:80
+    restart: always
+    environment:
+      - WORDPRESS_DB_HOST=db:${MYSQL_PORT}
+      - WORDPRESS_DB_USER=${MYSQL_USER}
+      - WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}
+      - WORDPRESS_DB_NAME=${MYSQL_DB}
+  db:
+    image: mysql:latest
+    container_name: db
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PORT: ${MYSQL_PORT}
+    ports:
+      - "${MYSQL_PORT}:${MYSQL_PORT}"
+    command: --init-file /mysql-init/init.sql
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql-init:/mysql-init
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    networks:
+      - default
+    environment:
+      PMA_HOST: db
+      PMA_PORT: ${MYSQL_PORT}
+      PMA_USER: ${MYSQL_USER}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - 8080:80
+volumes:
+  db_data:
+networks:
+  default:
+
