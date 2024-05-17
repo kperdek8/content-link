@@ -1,11 +1,38 @@
 services:
+  flask:
+    build: ./recommendation_algorithm
+    restart: always
+    develop:
+      watch:
+        - action: rebuild
+          path: ./recommendation_algorithm/requirements.txt
+        - action: sync
+          path: ./recommendation_algorithm
+          target: /recommendation_algorithm
+    networks:
+      - default
+    ports:
+      - ${FLASK_RUN_PORT}:${FLASK_RUN_PORT}
+    depends_on:
+      - db
+    environment:
+      APP_NAME: ${APP_NAME}
+      FLASK_ENV: ${FLASK_ENV}
+      FLASK_DEBUG: ${FLASK_DEBUG}
+      FLASK_RUN_HOST: ${FLASK_RUN_HOST}
+      FLASK_RUN_PORT: ${FLASK_RUN_PORT}
+      MYSQL_HOST: db
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB: ${MYSQL_DB}
   wordpress:
     image: wordpress:latest
     container_name: wordpress
     networks:
-      - default
+      - inside
     ports:
-      - 9557:80
+      - ${WORDPRESS_PORT}:80
     restart: always
     environment:
       - WORDPRESS_DB_HOST=db:${MYSQL_PORT}
@@ -16,15 +43,15 @@ services:
     image: mysql:latest
     container_name: db
     networks:
-      - default
+      - inside
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DB}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_PORT: ${MYSQL_PORT}
-    ports:
-      - "${MYSQL_PORT}:${MYSQL_PORT}"
+    expose:
+      - ${MYSQL_PORT}:${MYSQL_PORT}
     command: --init-file /mysql-init/init.sql
     volumes:
       - db_data:/var/lib/mysql
@@ -33,7 +60,7 @@ services:
     image: phpmyadmin/phpmyadmin
     container_name: pma
     networks:
-      - default
+      - inside
     environment:
       PMA_HOST: db
       PMA_PORT: ${MYSQL_PORT}
@@ -42,9 +69,9 @@ services:
       PMA_ARBITRARY: 1
     restart: always
     ports:
-      - 8080:80
+      - ${PMA_PORT}:80
 volumes:
   db_data:
 networks:
-  default:
+  inside:
 
