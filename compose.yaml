@@ -2,13 +2,6 @@ services:
   flask:
     build: ./recommendation_algorithm
     restart: always
-    develop:
-      watch:
-        - action: rebuild
-          path: ./recommendation_algorithm/requirements.txt
-        - action: sync
-          path: ./recommendation_algorithm
-          target: /recommendation_algorithm
     networks:
       - default
     ports:
@@ -50,7 +43,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_PORT: ${MYSQL_PORT}
-    expose:
+    ports:
       - ${MYSQL_PORT}:${MYSQL_PORT}
     command: --init-file /mysql-init/init.sql
     volumes:
