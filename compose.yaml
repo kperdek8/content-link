@@ -2,12 +2,20 @@ services:
   flask:
     build: ./recommendation_algorithm
     restart: always
+    develop:
+      watch:
+        - action: rebuild
+          path: ./recommendation_algorithm/requirements.txt
+        - action: sync
+          path: ./recommendation_algorithm
+          target: /app
     networks:
       - inside
     ports:
       - ${FLASK_RUN_PORT}:${FLASK_RUN_PORT}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       APP_NAME: ${APP_NAME}
       FLASK_ENV: ${FLASK_ENV}
@@ -50,6 +58,10 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./mysql-init:/mysql-init
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}" ]
+      interval: 10s
+      timeout: 15s
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: pma
