@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from cfg.config import Config
+from recommendation_algorithm import recommended_posts
 
 # Generating app's configuration
 app_config = Config().config
@@ -23,7 +24,10 @@ def process_request(user_id: int):
     # TODO: Test if user_id is integer
     user_id = int(user_id)
     user_data = read_user_data(user_id)
+    # Dummy function
     recommendations = get_recommendations(user_data)
+    # Target function
+    # recommendations = recommended_posts()
     return jsonify(recommendations), 200
 
 
