@@ -3,7 +3,7 @@ services:
     build: ./recommendation_algorithm
     restart: always
     networks:
-      - default
+      - inside
     ports:
       - ${FLASK_RUN_PORT}:${FLASK_RUN_PORT}
     depends_on:
@@ -24,6 +24,7 @@ services:
     container_name: wordpress
     networks:
       - inside
+      - outside
     ports:
       - ${WORDPRESS_PORT}:80
     restart: always
@@ -54,6 +55,7 @@ services:
     container_name: pma
     networks:
       - inside
+      - outside
     environment:
       PMA_HOST: db
       PMA_PORT: ${MYSQL_PORT}
@@ -67,4 +69,5 @@ volumes:
   db_data:
 networks:
   inside:
+  outside:
 
