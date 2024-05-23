@@ -2,45 +2,45 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import random
-
-# Load data
-user_df = pd.read_csv('users_large.csv')
-post_df = pd.read_csv('posts_large_updated.csv')
-interaction_df = pd.read_csv('interactions_large_updated.csv')
-semantic_map_df = pd.read_csv('somatic_map.csv', delimiter=';', header=None)
-
-# Process semantic map
-tags = semantic_map_df.iloc[0, 1:].values
-semantic_map_df = semantic_map_df[1:]
-semantic_map_df.columns = ['Tag'] + list(tags)
-semantic_map_df.set_index('Tag', inplace=True)
-
-# Merge data for simplicity
-data = pd.merge(interaction_df, post_df, on='Post')
-
-# Check for NaN values in the Tags column and replace them with an empty string
-post_df['Tags'] = post_df['Tags'].fillna('')
-
-# TF-IDF Vectorizer
-tfidf = TfidfVectorizer(stop_words='english')
-tfidf_matrix = tfidf.fit_transform(post_df['Tags'])
-
-# Similarity matrix
-cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
 
+# Load semantic map from CSV file and ensure unique column names
+def load_semantic_map(file_path):
+    semantic_map_df = pd.read_csv(file_path, delimiter=';', header=0, index_col=0)
+    return semantic_map_df.to_dict()
+
+
+# Function to prepare TF-IDF matrix from a list of tags
+def prepare_tfidf_matrix(tags_list):
+    tags_series = pd.Series(tags_list).fillna('')
+    tfidf = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = tfidf.fit_transform(tags_series)
+    return tfidf_matrix
+
+
+# Function to get semantic similarity between two tags
 def get_semantic_similarity(tag1, tag2, semantic_map):
-    if tag1 in semantic_map.index and tag2 in semantic_map.columns:
-        return semantic_map.at[tag1, tag2]
+    if tag1 in semantic_map and tag2 in semantic_map[tag1]:
+        return semantic_map[tag1][tag2]
     else:
         return 0
 
 
-def get_recommendations(user_id, interaction_df, post_df, similarity_matrix, semantic_map, top_n=5):
+# Function to get recommendations
+def get_recommendations(user_id, posts, interactions, semantic_map, top_n=5):
+    # Convert posts to DataFrame
+    post_df = pd.DataFrame(list(posts.items()), columns=['Post', 'Tags'])
+    post_df['Tags'] = post_df['Tags'].apply(lambda tags: ', '.join(tags))
+
+    # Prepare the TF-IDF matrix from the tags list
+    tags_list = post_df['Tags'].tolist()
+    tfidf_matrix = prepare_tfidf_matrix(tags_list)
+
+    # Similarity matrix
+    similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
     # Indices of interacted posts
-    user_interactions = interaction_df[interaction_df['User'] == user_id]
-    interacted_posts = user_interactions['Post'].tolist()
+    interacted_posts = [post.rstrip('/') for post in interactions[user_id]]
     interacted_indices = post_df[post_df['Post'].isin(interacted_posts)].index.tolist()
 
     # Sum of similarity scores
@@ -49,12 +49,12 @@ def get_recommendations(user_id, interaction_df, post_df, similarity_matrix, sem
     # Directly emphasize user's main interest
     user_tags = []
     for interacted_post in interacted_posts:
-        user_tags.extend(post_df.loc[post_df['Post'] == interacted_post, 'Tags'].values[0].split(', '))
+        user_tags.extend(posts[interacted_post])
 
     main_interest = max(set(user_tags), key=user_tags.count)
 
     # Debugging: print user's main interest
-    print(f"User {user_id}'s main interest: {main_interest}")
+    print(f"User {user_id}'s main interest: {main_interest}", flush=True)
 
     # Adjust similarity scores with semantic map
     for idx, post in enumerate(post_df['Post']):
@@ -80,19 +80,14 @@ def get_recommendations(user_id, interaction_df, post_df, similarity_matrix, sem
     main_interest_indices = main_interest_posts.index.tolist()
 
     # Combine the main interest posts with the other recommendations
-    recommended_indices = main_interest_indices[:top_n] + [i for i in uninteracted_indices if
-                                                           i not in main_interest_indices][
-                                                          :top_n - len(main_interest_indices)]
+    recommended_indices = main_interest_indices + [i for i in uninteracted_indices if i not in main_interest_indices]
+
+    # Limit the number of recommendations to top N
+    recommended_indices = recommended_indices[:top_n]
 
     # Debugging: print tags of recommended posts
     recommended_posts = post_df.iloc[recommended_indices]
-    print("Recommended posts and their tags:")
-    print(recommended_posts[['Post', 'Tags']])
+    print("Recommended posts and their tags:", flush=True)
+    print(recommended_posts[['Post', 'Tags']], flush=True)
 
     return recommended_posts['Post'].tolist()
-
-
-# Example usage
-user_to_test = 'user2'
-recommended_posts = get_recommendations(user_to_test, interaction_df, post_df, cosine_sim, semantic_map_df)
-print(recommended_posts)

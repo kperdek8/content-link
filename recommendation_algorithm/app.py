@@ -1,7 +1,7 @@
 import mysql.connector
 from flask import Flask, jsonify, request
 from cfg.config import Config
-#from recommendation_algorithm import get_recommendations
+from recommendation_algorithm import get_recommendations, load_semantic_map
 
 # Generating app's configuration
 app_config = Config().config
@@ -10,6 +10,8 @@ app = Flask(app_config.APP_NAME)
 
 articles: list = []
 article_tags: dict[str, list] = {}
+tags: list = []
+semantic_map: dict = {}
 
 
 def get_articles() -> list:
@@ -22,6 +24,16 @@ def get_articles() -> list:
     return [article[0] for article in articles]
 
 
+def get_tags() -> list:
+    with mysql.connector.connect(**app_config.MYSQL_CONFIG) as cnx:
+        with cnx.cursor() as cursor:
+            # Executing SQL Statements
+            query = f"SELECT DISTINCT name FROM post_tag"
+            cursor.execute(query)
+            tags = cursor.fetchall()
+    return [tag[0] for tag in tags]
+
+
 def get_article_tags(article: str) -> list:
     with mysql.connector.connect(**app_config.MYSQL_CONFIG) as cnx:
         with cnx.cursor() as cursor:
@@ -30,11 +42,6 @@ def get_article_tags(article: str) -> list:
             cursor.execute(query)
             tags = cursor.fetchall()
     return [tag[0] for tag in tags]
-
-
-def get_recommendations(user_data: dict) -> list:
-    recommendations = [3, 1, 2]
-    return recommendations
 
 
 def check_if_user_exists(user_id: str) -> bool:
@@ -47,7 +54,7 @@ def check_if_user_exists(user_id: str) -> bool:
     return exists
 
 
-def read_user_data(user_id: str) -> list:
+def read_user_data(user_id: str) -> dict:
     with mysql.connector.connect(**app_config.MYSQL_CONFIG) as cnx:
         with cnx.cursor() as cursor:
             # Executing SQL Statements
@@ -55,12 +62,15 @@ def read_user_data(user_id: str) -> list:
 
             cursor.execute(query)
             user_data = cursor.fetchall()
-    return [interaction[0] for interaction in user_data]
+    return {user_id: [interaction[0] for interaction in user_data]}
 
 
 def init():
-    global articles, article_tags
+    global articles, article_tags, tags, semantic_map
+    tags = get_tags()
     articles = get_articles()
+    semantic_map_file_path = './somatic_map.csv'
+    semantic_map = load_semantic_map(semantic_map_file_path)
     for article in articles:
         article_tags[article] = get_article_tags(article)
 
@@ -70,10 +80,9 @@ def process_request(user_id: str):
     if not check_if_user_exists(user_id):
         return jsonify({"error": "user_does_not_exist"}), 404
     user_data = read_user_data(user_id)
-    # For testing purpose
-    return jsonify(user_data), 200
-    ################################
-    recommendations = get_recommendations(user_data)
+
+    # Load the semantic map
+    recommendations = get_recommendations(user_id, article_tags, user_data, semantic_map)
     return jsonify(recommendations), 200
 
 
