@@ -38,6 +38,30 @@ CREATE TABLE `show_visits_by_visitor_id` (
 -- --------------------------------------------------------
 
 --
+-- Stand-in structure for view `post_tag`
+-- (See below for the actual view)
+--
+CREATE TABLE `post_tag` (
+`post_name` varchar(200)
+,`name` varchar(200)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `user_interactions`
+-- (See below for the actual view)
+--
+CREATE TABLE `user_interactions` (
+`user_id` varchar(255)
+,`post_url` varchar(255)
+,`post_name` varchar(255)
+);
+
+-- --------------------------------------------------------
+
+
+--
 -- Table structure for table `wp_commentmeta`
 --
 
@@ -47,6 +71,8 @@ CREATE TABLE `wp_commentmeta` (
   `meta_key` varchar(255) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `meta_value` longtext COLLATE utf8mb4_unicode_520_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+CREATE TABLE `wordpress`.`wp_content_preferences` (`user_id` VARCHAR(255) NOT NULL , `post_url` VARCHAR(255) NOT NULL ) ENGINE = InnoDB; 
 
 --
 -- Dumping data for table `wp_commentmeta`
@@ -8420,11 +8446,26 @@ INSERT INTO `wp_users` (`ID`, `user_login`, `user_pass`, `user_nicename`, `user_
 -- --------------------------------------------------------
 
 --
+-- Structure for view `post_tag`
+--
+DROP TABLE IF EXISTS `post_tag`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`user`@`%` SQL SECURITY DEFINER VIEW `post_tag`  AS SELECT `wp_posts`.`post_name` AS `post_name`, `wp_terms`.`name` AS `name` FROM ((`wp_posts` join `wp_terms`) join `wp_term_relationships`) WHERE ((`wp_posts`.`ID` = `wp_term_relationships`.`object_id`) AND (`wp_term_relationships`.`term_taxonomy_id` = `wp_terms`.`term_id`) AND (`wp_terms`.`name` not in ('Bez kategorii','twentytwentyfour','twentytwentytwo','footer'))) ;
+
+--
 -- Structure for view `show_visits_by_visitor_id`
 --
 DROP TABLE IF EXISTS `show_visits_by_visitor_id`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `show_visits_by_visitor_id`  AS SELECT `log_visit`.`idvisitor` AS `visitor_id`, `action`.`name` AS `page_title`, count(0) AS `view_count` FROM ((`wp_matomo_log_visit` `log_visit` join `wp_matomo_log_link_visit_action` `link_visit` on((`log_visit`.`idvisit` = `link_visit`.`idvisit`))) join `wp_matomo_log_action` `action` on((`link_visit`.`idaction_url` = `action`.`idaction`))) WHERE (`action`.`type` = 1) GROUP BY `log_visit`.`idvisitor`, `action`.`name` ORDER BY `view_count` DESC ;
+
+--
+-- Structure for view `user_interactions`
+--
+DROP TABLE IF EXISTS `user_interactions`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`user`@`%` SQL SECURITY DEFINER VIEW `user_interactions`  AS SELECT `wp_content_preferences`.`user_id` AS `user_id`, `wp_content_preferences`.`post_url` AS `post_url`, substring_index(`wp_content_preferences`.`post_url`,'/',-(2)) AS `post_name` FROM `wp_content_preferences` WHERE (substring_index(`wp_content_preferences`.`post_url`,'/',-(2)) <> '127.0.0.1:9557/') ;
+
 
 --
 -- Indexes for dumped tables
