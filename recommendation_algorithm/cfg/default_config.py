@@ -4,7 +4,7 @@ class DefaultConfig:
     """
     def __init__(self):
         # App
-        self.APP_NAME = "Zabka Go"
+        self.APP_NAME = "Content-link"
         # MySQL
         self.MYSQL_HOST = '0.0.0.0'
         self.MYSQL_PORT = '3306'
