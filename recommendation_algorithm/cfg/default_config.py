@@ -10,4 +10,4 @@ class DefaultConfig:
         self.MYSQL_PORT = '3306'
         self.MYSQL_USER = 'user'
         self.MYSQL_PASSWORD = 'password'
-        self.MYSQL_DB = 'app_db'
+        self.MYSQL_DB = 'wordpress'
