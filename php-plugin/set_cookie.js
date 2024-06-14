@@ -1,3 +1,5 @@
+// Script generating a random id for a user
+
 document.addEventListener("DOMContentLoaded", function() {
     // Generate a random 32-bit string
     var randomString = generateRandomString(32);
@@ -6,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var encodedString = btoa(randomString);
 
     // Set the cookie with the encoded string
-    setCookie('test', encodedString, 365);
+    setCookie('content-link', encodedString, 365);
 });
 
 function generateRandomString(length) {
