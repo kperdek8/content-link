@@ -72,7 +72,12 @@ CREATE TABLE `wp_commentmeta` (
   `meta_value` longtext COLLATE utf8mb4_unicode_520_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
-CREATE TABLE `wordpress`.`wp_content_preferences` (`user_id` VARCHAR(255) NOT NULL , `post_url` VARCHAR(255) NOT NULL ) ENGINE = InnoDB; 
+CREATE TABLE `wp_content_preferences` (
+  `id` int NOT NULL,
+  `user_id` varchar(255) NOT NULL,
+  `post_url` varchar(255) NOT NULL,
+  `edit_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Dumping data for table `wp_commentmeta`
@@ -8472,6 +8477,12 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`user`@`%` SQL SECURITY DEFINER VIEW `user_in
 --
 
 --
+-- Indexes for table `wp_content_preferences`
+--
+ALTER TABLE `wp_content_preferences`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `wp_commentmeta`
 --
 ALTER TABLE `wp_commentmeta`
@@ -9005,6 +9016,12 @@ ALTER TABLE `wp_users`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `wp_content_preferences`
+--
+ALTER TABLE `wp_content_preferences`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=151;
 
 --
 -- AUTO_INCREMENT for table `wp_commentmeta`
